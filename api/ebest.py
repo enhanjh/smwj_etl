@@ -55,12 +55,12 @@ class XAQueryEventHandlerT1514:
         XAQueryEventHandlerT1514.query_state = 1
 
 
-# 5.2 market index tr vol by investor group
-class XAQueryEventHandlerT1665:
+# 5.2 market index tr amount by investor group
+class XAQueryEventHandlerT1617:
     query_state = 0
 
     def OnReceiveData(self, code):
-        XAQueryEventHandlerT1665.query_state = 1
+        XAQueryEventHandlerT1617.query_state = 1
 
 
 # 5.3 abroad market index
@@ -287,7 +287,98 @@ def retrieve_investor_volume(logger, bind, edate, sdate):
 
     odo.odo(items, tbl)
 
-# 5. market index update
+
+# 5.2 market index tr amount
+def retrieve_market_index_tr_amt(logger, bind, edate, sdate):
+    logger.info("retrieve market index transaction amount")
+
+    metadata = sa.MetaData(bind=bind)
+    tbl = sa.Table('market_index_tr_amt'
+                   , metadata
+                   , sa.Column('item', sa.String, primary_key=True)
+                   , sa.Column('tran_day', sa.String, primary_key=True)
+                   , sa.Column('ant', sa.Integer)
+                   , sa.Column('fore', sa.Integer)
+                   , sa.Column('inst', sa.Integer)
+                   , sa.Column('sec', sa.Integer)
+                   )
+    # 순매수금액(단위 : 억원)
+    # 차례대로 증권, 개인, 외국인, 기관계
+    items = {"1-kospi", "2-kosdaq", "3-futures", "4-call", "5-put"}
+
+    instXAQueryT1617 = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandlerT1617)
+    instXAQueryT1617.ResFileName = "C:\\eBEST\\xingAPI\\Res\\T1617.res"
+
+    rslt = list()
+
+    for idx, val in enumerate(items):
+        logger.info(str(idx) + " : " + str(val))
+        temp = val.split("-")
+        instXAQueryT1617.SetFieldData("t1617InBlock", "gubun1", 0, temp[0])
+        instXAQueryT1617.SetFieldData("t1617InBlock", "gubun2", 0, "2")  # 1: 수량, 2: 금액
+        instXAQueryT1617.SetFieldData("t1617InBlock", "gubun3", 0, "2")  # 1: 시간별, 2: 일별
+
+        rslt = rslt + retrieve_market_index_tr_amt_api_call(instXAQueryT1617, 0, temp, edate, sdate)
+
+    odo.odo(rslt, tbl)
+
+
+# 5.2.1 api call (devided for continuous search)
+def retrieve_market_index_tr_amt_api_call(instXAQueryT1617, cont_yn, temp, cts_date, sdate):
+    time.sleep(3)
+
+    instXAQueryT1617.SetFieldData("t1617InBlock", "cts_date", 0, cts_date)
+
+    XAQueryEventHandlerT1617.query_state = 0
+    instXAQueryT1617.Request(cont_yn)
+
+    while XAQueryEventHandlerT1617.query_state == 0:
+        pythoncom.PumpWaitingMessages()
+
+    return retrieve_market_index_tr_amt_api_callback(instXAQueryT1617, temp, sdate)
+
+
+# 5.2.2 api callback (devided for continuous search)
+def retrieve_market_index_tr_amt_api_callback(instXAQueryT1617, temp, sdate):
+    cts_date = instXAQueryT1617.GetFieldData("t1617OutBlock", "cts_date", 0)
+
+    count = instXAQueryT1617.GetBlockCount("t1617OutBlock1")
+
+    rslt = list()
+
+    for i in range(count):
+        row = list()
+        row.append(temp[1])
+        row.append(instXAQueryT1617.GetFieldData("t1617OutBlock1", "date", i))
+        try:
+            row.append(int(instXAQueryT1617.GetFieldData("t1617OutBlock1", "sv_08", i)))  # 개인
+        except ValueError:
+            row.append(0)
+
+        try:
+            row.append(int(instXAQueryT1617.GetFieldData("t1617OutBlock1", "sv_17", i)))  # 외국인
+        except ValueError:
+            row.append(0)
+
+        try:
+            row.append(int(instXAQueryT1617.GetFieldData("t1617OutBlock1", "sv_18", i)))  # 기관계
+        except ValueError:
+            row.append(0)
+
+        try:
+            row.append(int(instXAQueryT1617.GetFieldData("t1617OutBlock1", "sv_01", i)))  # 증권
+        except ValueError:
+            row.append(0)
+
+        rslt.append(row)
+
+    if int(cts_date) >= int(sdate):
+        rslt = rslt + retrieve_market_index_tr_amt_api_call(instXAQueryT1617, 1, temp, cts_date, sdate)
+
+    return rslt
+
+
+# 5.3 abroad market indices
 def retrieve_abroad_index(logger, bind, today, row_cnt):
     logger.info("retrieve abroad indices")
 
@@ -296,10 +387,10 @@ def retrieve_abroad_index(logger, bind, today, row_cnt):
                    , metadata
                    , sa.Column('item', sa.String, primary_key=True)
                    , sa.Column('tran_day', sa.String, primary_key=True)
-                   , sa.Column('open', sa.Integer)
-                   , sa.Column('high', sa.Integer)
-                   , sa.Column('low', sa.Integer)
-                   , sa.Column('close', sa.Integer)
+                   , sa.Column('open', sa.Double)
+                   , sa.Column('high', sa.Double)
+                   , sa.Column('low', sa.Double)
+                   , sa.Column('close', sa.Double)
                    )
 
     items = {"R-USDKRWSMBS", "S-DJI@DJI", "S-NAS@IXIC", "S-SPI@SPX", "S-NII@NI225"}  # 원달러, 다우존스산업
@@ -322,7 +413,7 @@ def retrieve_abroad_index(logger, bind, today, row_cnt):
     odo.odo(rslt, tbl)
 
 
-# 5.1 api call (devided for continuous search)
+# 5.3.1 api call (devided for continuous search)
 def retrieve_abroad_index_api_call(instXAQueryT3518, cont_yn, temp, cts_date, cts_time, row_cnt):
     time.sleep(3)
 
@@ -338,7 +429,7 @@ def retrieve_abroad_index_api_call(instXAQueryT3518, cont_yn, temp, cts_date, ct
     return retrieve_abroad_index_api_callback(instXAQueryT3518, temp, row_cnt)
 
 
-# 5.2 api callback (devided for continuous search)
+# 5.3.2 api callback (devided for continuous search)
 def retrieve_abroad_index_api_callback(instXAQueryT3518, temp, row_cnt):
     cts_date = instXAQueryT3518.GetFieldData("t3518OutBlock", "cts_date", 0)
     cts_time = instXAQueryT3518.GetFieldData("t3518OutBlock", "cts_time", 0)
