@@ -28,6 +28,7 @@ class Operator:
         self.botSmwj = object()
         self.logger = object()
         self.db_session = object()
+        self.logger = object()
         self.bind = str()
         self.today = time.strftime("%Y%m%d")
 
@@ -41,14 +42,6 @@ class Operator:
             # etl run
             self.etl_run()
         else:
-            ######################### delete ########################
-            # eb.login(self.logger)
-            # eb.retrieve_item_mst(self.logger, self.bind)
-
-            # eb.retrieve_daily_chart(self.logger, self.bind, self.db_session, '20180928', '20180928')
-            # eb.retrieve_investor_volume(self.logger, self.bind, '20140831', '20000101')
-            # eb.retrieve_abroad_index(self.logger, self.bind, '20180928', '750')
-            ######################### delete ########################
             self.shut_down()
 
     def chatbot_start(self):
@@ -89,6 +82,7 @@ class Operator:
 
         eb.retrieve_daily_chart(self.logger, self.bind, self.db_session, edate, sdate)
         eb.retrieve_investor_volume(self.logger, self.bind, edate, sdate)
+        eb.retrieve_market_index_tr_amt(self.logger, self.bind, edate, edate)
         eb.retrieve_abroad_index(self.logger, self.bind, edate, row_cnt)
 
         self.shut_down()
