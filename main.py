@@ -8,6 +8,7 @@
 
 import logging
 import os
+import sys
 import time
 import datetime as dt
 import urllib.request as req
@@ -25,7 +26,7 @@ from sqlalchemy.orm import sessionmaker
 class Operator:
     def __init__(self):
         # variable init
-        self.botSmwj = object()
+        self.bot_smwj = object()
         self.logger = object()
         self.db_session = object()
         self.logger = object()
@@ -41,23 +42,29 @@ class Operator:
         if self.bizday_check():
             # etl run
             self.etl_run()
-        else:
-            self.shut_down()
+        # else:
+            # self.shut_down()
 
     def chatbot_start(self):
-        self.botSmwj = bot.BotSmwj(self)
-        self.botSmwj.start()
-        self.botSmwj.send_message("smwj-etl is starting up")
+        self.bot_smwj = bot.BotSmwj(self)
+        self.bot_smwj.start()
+        self.bot_smwj.send_message("smwj-etl is starting up")
 
     def logger_start(self):
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-        self.logger = logging.getLogger("myLogger")
         formatter = logging.Formatter('[%(levelname)s:%(lineno)s] %(asctime)s > %(message)s')
+        self.logger = logging.getLogger()
+
         fh = TimedRotatingFileHandler("C:\SMWJ_LOG\\etl", when="midnight")
         fh.setFormatter(formatter)
         fh.suffix = "_%Y%m%d.log"
+
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setFormatter(formatter)
+
         self.logger.addHandler(fh)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(ch)
+        self.logger.setLevel(logging.INFO)
 
     def orm_init(self):
         scott = ic.dbconfig["user"]
@@ -65,25 +72,22 @@ class Operator:
         self.bind = 'mysql+mysqlconnector://' + scott + ':' + tiger + '@localhost:3306/smwj'
 
         engine = create_engine(self.bind)
-        DBSession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        self.db_session = DBSession()
+        dbsession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        self.db_session = dbsession()
 
     def etl_run(self):
         eb.login(self.logger)
         eb.retrieve_item_mst(self.logger, self.bind)
 
         edate = self.today
-        sdate = self.today
+        # sdate = self.today
         row_cnt = "1"
-        if dt.datetime.today().weekday() == 4:  # friday
-            d = datetime.today() - timedelta(days=3650)
-            sdate = d.strftime("%Y%m%d")
-            row_cnt = "800"
 
-        eb.retrieve_daily_chart(self.logger, self.bind, self.db_session, edate, sdate)
-        eb.retrieve_investor_volume(self.logger, self.bind, edate, sdate)
+        eb.retrieve_daily_chart(self.logger, self.bind, self.db_session, edate, edate)
+        eb.retrieve_investor_volume(self.logger, self.bind, edate, edate)
         eb.retrieve_market_index_tr_amt(self.logger, self.bind, edate, edate)
         eb.retrieve_abroad_index(self.logger, self.bind, edate, row_cnt)
+        eb.retrieve_market_liquidity(self.logger, self.bind, edate, edate)
 
         self.shut_down()
 
@@ -108,18 +112,18 @@ class Operator:
         bizday = True
         if dt.datetime.today().weekday() >= 5:
             bizday = False
-            self.botSmwj.send_message("today is weekend")
+            self.bot_smwj.send_message("today is weekend")
         elif self.today in holidays:
             bizday = False
-            self.botSmwj.send_message("today is holiday")
+            self.bot_smwj.send_message("today is holiday")
         elif self.today[4:8] == '0501':
             bizday = False
-            self.botSmwj.send_message("today is mayday")
+            self.bot_smwj.send_message("today is mayday")
 
         return bizday
 
     def shut_down(self):
-        self.botSmwj.send_message("smwj-etl is shutting down")
+        self.bot_smwj.send_message("smwj-etl is shutting down")
 
         os._exit(0)
 
