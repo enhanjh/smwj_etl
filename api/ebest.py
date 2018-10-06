@@ -71,6 +71,14 @@ class XAQueryEventHandlerT3518:
         XAQueryEventHandlerT3518.query_state = 1
 
 
+# 6. market liquidity
+class XAQueryEventHandlerT8428:
+    query_state = 0
+
+    def OnReceiveData(self, code):
+        XAQueryEventHandlerT8428.query_state = 1
+
+
 # function definition
 # 1. login
 def login(obj):
@@ -133,7 +141,7 @@ def retrieve_item_mst(logger, bind):
 
 # 3. retrieve daily chart
 def retrieve_daily_chart(logger, bind, db_session, edate, sdate):
-    logger.info("retrieve daily prices")
+    logger.info("retrieve daily prices from " + sdate + " to " + edate)
 
     metadata = sa.MetaData(bind=bind)
     tbl = sa.Table('price'
@@ -209,7 +217,7 @@ def retrieve_daily_chart(logger, bind, db_session, edate, sdate):
 
 # 4. transaction volume by investor group
 def retrieve_investor_volume(logger, bind, edate, sdate):
-    logger.info("retrieve tr volume of investor")
+    logger.info("retrieve tr volume of investor from " + sdate + " to " + edate)
 
     metadata = sa.MetaData(bind=bind)
     tbl = sa.Table('investor'
@@ -290,7 +298,7 @@ def retrieve_investor_volume(logger, bind, edate, sdate):
 
 # 5.2 market index tr amount
 def retrieve_market_index_tr_amt(logger, bind, edate, sdate):
-    logger.info("retrieve market index transaction amount")
+    logger.info("retrieve market index transaction amount from " + sdate + " to " + edate)
 
     metadata = sa.MetaData(bind=bind)
     tbl = sa.Table('market_index_tr_amt'
@@ -349,7 +357,8 @@ def retrieve_market_index_tr_amt_api_callback(instXAQueryT1617, temp, sdate):
     for i in range(count):
         row = list()
         row.append(temp[1])
-        row.append(instXAQueryT1617.GetFieldData("t1617OutBlock1", "date", i))
+        loop_cur_date = instXAQueryT1617.GetFieldData("t1617OutBlock1", "date", i).strip()
+        row.append(loop_cur_date)
         try:
             row.append(int(instXAQueryT1617.GetFieldData("t1617OutBlock1", "sv_08", i)))  # 개인
         except ValueError:
@@ -372,6 +381,9 @@ def retrieve_market_index_tr_amt_api_callback(instXAQueryT1617, temp, sdate):
 
         rslt.append(row)
 
+        if loop_cur_date == sdate:
+            break
+
     if int(cts_date) >= int(sdate):
         rslt = rslt + retrieve_market_index_tr_amt_api_call(instXAQueryT1617, 1, temp, cts_date, sdate)
 
@@ -380,7 +392,7 @@ def retrieve_market_index_tr_amt_api_callback(instXAQueryT1617, temp, sdate):
 
 # 5.3 abroad market indices
 def retrieve_abroad_index(logger, bind, today, row_cnt):
-    logger.info("retrieve abroad indices")
+    logger.info("retrieve abroad indices from " + row_cnt + " biz days before " + today)
 
     metadata = sa.MetaData(bind=bind)
     tbl = sa.Table('market_index'
@@ -456,5 +468,111 @@ def retrieve_abroad_index_api_callback(instXAQueryT3518, temp, row_cnt):
 
     if not row_cnt == "1":
         rslt = rslt + retrieve_abroad_index_api_call(instXAQueryT3518, 1, temp, cts_date, cts_time, row_cnt)
+
+    return rslt
+
+
+# 6. market liquidity
+def retrieve_market_liquidity(logger, bind, edate, sdate):
+    logger.info("retrieve market liquidity from " + sdate + " to " + edate)
+
+    metadata = sa.MetaData(bind=bind)
+    tbl = sa.Table('market_liquidity'
+                   , metadata
+                   , sa.Column('tran_day', sa.String, primary_key=True)
+                   , sa.Column('kospi_close', sa.Double)
+                   , sa.Column('diff', sa.Double)
+                   , sa.Column('diff_rate', sa.Double)
+                   , sa.Column('volume', sa.Integer)
+                   , sa.Column('deposit', sa.Integer)
+                   , sa.Column('deposit_diff', sa.Integer)
+                   , sa.Column('roll_rate', sa.Double)
+                   , sa.Column('credit_bal', sa.Integer)
+                   , sa.Column('credit_rest', sa.Integer)
+                   , sa.Column('depo_futures', sa.Integer)
+                   , sa.Column('stock', sa.Integer)
+                   , sa.Column('mix_stock', sa.Integer)
+                   , sa.Column('mix_bond', sa.Integer)
+                   , sa.Column('bond', sa.Integer)
+                   , sa.Column('tbill', sa.Integer)
+                   , sa.Column('mmf', sa.Integer)
+                   )
+
+    # 단위 : 억원
+    # 고객예탁금, 예탁증감, 회전율, 미수금, 신용잔고, 선물예수금, 주식형, 혼합형(주식), 혼합형(채권), 채권형,
+    # 필러(단기채권), MMF
+
+    instXAQueryT8428 = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandlerT8428)
+    instXAQueryT8428.ResFileName = "C:\\eBEST\\xingAPI\\Res\\T8428.res"
+
+    rslt = list()
+
+    instXAQueryT8428.SetFieldData("t8428InBlock", "tdate", 0, edate)
+    instXAQueryT8428.SetFieldData("t8428InBlock", "fdate", 0, sdate)
+    instXAQueryT8428.SetFieldData("t8428InBlock", "gubun", 0, "1")  # 1: 예탁금, 2: 수익증권
+    instXAQueryT8428.SetFieldData("t8428InBlock", "upcode", 0, "001")  # 001: 코스피, 301: 코스닥
+    row_cnt = "1"
+    if edate != sdate:
+        row_cnt = "500"
+
+    instXAQueryT8428.SetFieldData("t8428InBlock", "cnt", 0, row_cnt)  # 입력건수
+
+    rslt = rslt + retrieve_abroad_index_api_call(instXAQueryT8428, 0, edate, sdate)
+
+    odo.odo(rslt, tbl)
+
+
+# 6.1 api call (devided for continuous search)
+def retrieve_market_liquidity_api_call(instXAQueryT8428, cont_yn, cts_date, sdate):
+    time.sleep(3)
+
+    instXAQueryT8428.SetFieldData("t8428InBlock", "key_date", 0, cts_date)
+
+    XAQueryEventHandlerT8428.query_state = 0
+    instXAQueryT8428.Request(cont_yn)
+
+    while XAQueryEventHandlerT8428.query_state == 0:
+        pythoncom.PumpWaitingMessages()
+
+    return retrieve_abroad_index_api_callback(instXAQueryT8428, sdate)
+
+
+# 6.2 api callback (devided for continuous search)
+def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
+    cts_date = instXAQueryT8428.GetFieldData("t8428OutBlock", "date", 0)
+
+    count = instXAQueryT8428.GetBlockCount("t8428OutBlock1")
+
+    rslt = list()
+
+    for i in range(count):
+        row = list()
+
+        loop_cur_date = instXAQueryT8428.GetFieldData("t8428OutBlock1", "date", i).strip()
+        row.append(loop_cur_date)
+        row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "jisu", i)))
+        row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "change", i)))
+        row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "diff", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "volume", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "custmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "yecha", i)))
+        row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "vol", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "outmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "trjango", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "futymoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "stkmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "mstkmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "mbndmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "bndmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "bndsmoney", i)))
+        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "mmfmoney", i)))
+
+        rslt.append(row)
+
+        if loop_cur_date == sdate:
+            break
+
+    if int(cts_date) >= int(sdate):
+        rslt = rslt + retrieve_market_index_tr_amt_api_call(instXAQueryT8428, 1, cts_date, sdate)
 
     return rslt
