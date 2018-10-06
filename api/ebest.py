@@ -553,7 +553,11 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
         row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "jisu", i)))
         row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "change", i)))
         row.append(float(instXAQueryT8428.GetFieldData("t8428OutBlock1", "diff", i)))
-        row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "volume", i)))
+        try:
+            row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "volume", i)))
+        except ValueError:
+            row.append(0)
+
         row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "custmoney", i)))
         try:
             row.append(int(instXAQueryT8428.GetFieldData("t8428OutBlock1", "yecha", i)))
