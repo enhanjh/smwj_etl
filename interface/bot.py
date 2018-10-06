@@ -15,7 +15,6 @@ class TelegramBot:
 
         # 013 : me, 535 : song
         self.id = ic.telegram["chat_id"]
-        # self.id = [695462013]
         self.name = name
 
     def print_message(self, bot, text):
