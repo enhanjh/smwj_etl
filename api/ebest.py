@@ -517,7 +517,7 @@ def retrieve_market_liquidity(logger, bind, edate, sdate):
 
     instXAQueryT8428.SetFieldData("t8428InBlock", "cnt", 0, row_cnt)  # 입력건수
 
-    rslt = rslt + retrieve_abroad_index_api_call(instXAQueryT8428, 0, edate, sdate)
+    rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 0, edate, sdate)
 
     odo.odo(rslt, tbl)
 
@@ -534,7 +534,7 @@ def retrieve_market_liquidity_api_call(instXAQueryT8428, cont_yn, cts_date, sdat
     while XAQueryEventHandlerT8428.query_state == 0:
         pythoncom.PumpWaitingMessages()
 
-    return retrieve_abroad_index_api_callback(instXAQueryT8428, sdate)
+    return retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate)
 
 
 # 6.2 api callback (devided for continuous search)
@@ -573,6 +573,6 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
             break
 
     if int(cts_date) >= int(sdate):
-        rslt = rslt + retrieve_market_index_tr_amt_api_call(instXAQueryT8428, 1, cts_date, sdate)
+        rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, cts_date, sdate)
 
     return rslt
