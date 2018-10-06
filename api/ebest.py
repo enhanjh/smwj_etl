@@ -399,10 +399,10 @@ def retrieve_abroad_index(logger, bind, today, row_cnt):
                    , metadata
                    , sa.Column('item', sa.String, primary_key=True)
                    , sa.Column('tran_day', sa.String, primary_key=True)
-                   , sa.Column('open', sa.Double)
-                   , sa.Column('high', sa.Double)
-                   , sa.Column('low', sa.Double)
-                   , sa.Column('close', sa.Double)
+                   , sa.Column('open', sa.Float)
+                   , sa.Column('high', sa.Float)
+                   , sa.Column('low', sa.Float)
+                   , sa.Column('close', sa.Float)
                    )
 
     items = {"R-USDKRWSMBS", "S-DJI@DJI", "S-NAS@IXIC", "S-SPI@SPX", "S-NII@NI225"}  # 원달러, 다우존스산업
@@ -480,13 +480,13 @@ def retrieve_market_liquidity(logger, bind, edate, sdate):
     tbl = sa.Table('market_liquidity'
                    , metadata
                    , sa.Column('tran_day', sa.String, primary_key=True)
-                   , sa.Column('kospi_close', sa.Double)
-                   , sa.Column('diff', sa.Double)
-                   , sa.Column('diff_rate', sa.Double)
+                   , sa.Column('kospi_close', sa.Float)
+                   , sa.Column('diff', sa.Float)
+                   , sa.Column('diff_rate', sa.Float)
                    , sa.Column('volume', sa.Integer)
                    , sa.Column('deposit', sa.Integer)
                    , sa.Column('deposit_diff', sa.Integer)
-                   , sa.Column('roll_rate', sa.Double)
+                   , sa.Column('roll_rate', sa.Float)
                    , sa.Column('credit_bal', sa.Integer)
                    , sa.Column('credit_rest', sa.Integer)
                    , sa.Column('depo_futures', sa.Integer)
