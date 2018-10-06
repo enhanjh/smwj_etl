@@ -384,7 +384,7 @@ def retrieve_market_index_tr_amt_api_callback(instXAQueryT1617, temp, sdate):
         if loop_cur_date == sdate:
             break
 
-    if int(cts_date) >= int(sdate):
+    if int(cts_date) > int(sdate):
         rslt = rslt + retrieve_market_index_tr_amt_api_call(instXAQueryT1617, 1, temp, cts_date, sdate)
 
     return rslt
@@ -505,8 +505,6 @@ def retrieve_market_liquidity(logger, bind, edate, sdate):
     instXAQueryT8428 = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandlerT8428)
     instXAQueryT8428.ResFileName = "C:\\eBEST\\xingAPI\\Res\\T8428.res"
 
-    rslt = list()
-
     instXAQueryT8428.SetFieldData("t8428InBlock", "tdate", 0, edate)
     instXAQueryT8428.SetFieldData("t8428InBlock", "fdate", 0, sdate)
     instXAQueryT8428.SetFieldData("t8428InBlock", "gubun", 0, "1")  # 1: 예탁금, 2: 수익증권
@@ -517,7 +515,7 @@ def retrieve_market_liquidity(logger, bind, edate, sdate):
 
     instXAQueryT8428.SetFieldData("t8428InBlock", "cnt", 0, row_cnt)  # 입력건수
 
-    rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 0, edate, sdate)
+    rslt = retrieve_market_liquidity_api_call(instXAQueryT8428, 0, edate, sdate)
 
     odo.odo(rslt, tbl)
 
@@ -539,7 +537,7 @@ def retrieve_market_liquidity_api_call(instXAQueryT8428, cont_yn, cts_date, sdat
 
 # 6.2 api callback (devided for continuous search)
 def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
-    cts_date = instXAQueryT8428.GetFieldData("t8428OutBlock", "date", 0)
+    cts_date = int(instXAQueryT8428.GetFieldData("t8428OutBlock", "date", 0)) - 1
 
     count = instXAQueryT8428.GetBlockCount("t8428OutBlock1")
 
@@ -580,7 +578,7 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
         if loop_cur_date == sdate:
             break
 
-    if int(cts_date) >= int(sdate):
-        rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, cts_date, sdate)
+    if cts_date > int(sdate):
+        rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, str(cts_date), sdate)
 
     return rslt
