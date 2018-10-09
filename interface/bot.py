@@ -100,7 +100,7 @@ class BotSmwj(TelegramBot):
 
         param = update.message.text
         if " " in param:
-            eb.retrieve_market_liquidity(self.par.logger, self.par.bind, param.split(" ")[1], param.split(" ")[2])
+            eb.retrieve_market_liquidity(self.par.logger, self.par.bind, param.split(" ")[1], param.split(" ")[2], "500")
             self.send_message("loaded market liquidity from " + param.split(" ")[2] + " to " + param.split(" ")[1])
 
     def abort(self, bot, update):
