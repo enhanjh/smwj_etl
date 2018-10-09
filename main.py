@@ -43,8 +43,9 @@ class Operator:
         if self.bizday_check():
             # etl run
             self.etl_run()
-        # else:
-            # self.shut_down()
+        else:
+            if sys.argv[1] == 'server':
+                self.shut_down()
 
     def chatbot_start(self):
         self.bot_smwj = bot.BotSmwj(self)
@@ -82,14 +83,16 @@ class Operator:
         eb.retrieve_item_mst(self.logger, self.bind)
 
         edate = self.today
-        # sdate = self.today
         row_cnt = "1"
+
+        d = datetime.today() - timedelta(days=10)
+        sdate = d.strftime("%Y%m%d")
 
         eb.retrieve_daily_chart(self.logger, self.bind, self.db_session, edate, edate)
         eb.retrieve_investor_volume(self.logger, self.bind, edate, edate)
         eb.retrieve_market_index_tr_amt(self.logger, self.bind, edate, edate)
         eb.retrieve_abroad_index(self.logger, self.bind, edate, row_cnt)
-        eb.retrieve_market_liquidity(self.logger, self.bind, edate, edate)
+        eb.retrieve_market_liquidity(self.logger, self.bind, edate, sdate, row_cnt)
 
         self.shut_down()
 
