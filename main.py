@@ -44,7 +44,7 @@ class Operator:
             # etl run
             self.etl_run()
         else:
-            if sys.argv[1] == 'server':
+            if len(sys.argv) > 1 and sys.argv[1] == 'server':
                 self.shut_down()
 
     def chatbot_start(self):
