@@ -473,7 +473,7 @@ def retrieve_abroad_index_api_callback(instXAQueryT3518, temp, row_cnt):
 
 
 # 6. market liquidity
-def retrieve_market_liquidity(logger, bind, edate, sdate):
+def retrieve_market_liquidity(logger, bind, edate, sdate, row_cnt):
     logger.info("retrieve market liquidity from " + sdate + " to " + edate)
 
     metadata = sa.MetaData(bind=bind)
@@ -509,19 +509,15 @@ def retrieve_market_liquidity(logger, bind, edate, sdate):
     instXAQueryT8428.SetFieldData("t8428InBlock", "fdate", 0, sdate)
     instXAQueryT8428.SetFieldData("t8428InBlock", "gubun", 0, "1")  # 1: 예탁금, 2: 수익증권
     instXAQueryT8428.SetFieldData("t8428InBlock", "upcode", 0, "001")  # 001: 코스피, 301: 코스닥
-    row_cnt = "1"
-    if edate != sdate:
-        row_cnt = "500"
-
     instXAQueryT8428.SetFieldData("t8428InBlock", "cnt", 0, row_cnt)  # 입력건수
 
-    rslt = retrieve_market_liquidity_api_call(instXAQueryT8428, 0, edate, sdate)
+    rslt = retrieve_market_liquidity_api_call(instXAQueryT8428, 0, edate, sdate, row_cnt)
 
     odo.odo(rslt, tbl)
 
 
 # 6.1 api call (devided for continuous search)
-def retrieve_market_liquidity_api_call(instXAQueryT8428, cont_yn, cts_date, sdate):
+def retrieve_market_liquidity_api_call(instXAQueryT8428, cont_yn, cts_date, sdate, row_cnt):
     time.sleep(3)
 
     instXAQueryT8428.SetFieldData("t8428InBlock", "key_date", 0, cts_date)
@@ -532,11 +528,11 @@ def retrieve_market_liquidity_api_call(instXAQueryT8428, cont_yn, cts_date, sdat
     while XAQueryEventHandlerT8428.query_state == 0:
         pythoncom.PumpWaitingMessages()
 
-    return retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate)
+    return retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate, row_cnt)
 
 
 # 6.2 api callback (devided for continuous search)
-def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
+def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate, row_cnt):
     cts_date = int(instXAQueryT8428.GetFieldData("t8428OutBlock", "date", 0)) - 1
 
     count = instXAQueryT8428.GetBlockCount("t8428OutBlock1")
@@ -575,10 +571,13 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate):
 
         rslt.append(row)
 
+        if row_cnt == "1":
+            break
+
         if loop_cur_date == sdate:
             break
 
     if cts_date > int(sdate):
-        rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, str(cts_date), sdate)
+        rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, str(cts_date), sdate, row_cnt)
 
     return rslt
