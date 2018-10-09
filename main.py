@@ -5,6 +5,7 @@
 # 3. sqlalchemy
 # 4. odo and [datapipelines, networkx 1.11, cassiopeia]
 # 5. request
+# 6. python-telegram-bot
 
 import logging
 import os
@@ -69,7 +70,8 @@ class Operator:
     def orm_init(self):
         scott = ic.dbconfig["user"]
         tiger = ic.dbconfig["password"]
-        self.bind = 'mysql+mysqlconnector://' + scott + ':' + tiger + '@localhost:3306/smwj'
+        host  = ic.dbconfig["host"]
+        self.bind = 'mysql+mysqlconnector://' + scott + ':' + tiger + '@' + host + ':3306/smwj'
 
         engine = create_engine(self.bind)
         dbsession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
