@@ -102,10 +102,10 @@ class BotSmwj(TelegramBot):
         if " " in param:
             eb.retrieve_market_liquidity(self.par.logger
                                          , self.par.bind
-                                         , param.split(" ")[1]
                                          , param.split(" ")[2]
+                                         , param.split(" ")[1]
                                          , param.split(" ")[3])
-            self.send_message("loaded market liquidity from " + param.split(" ")[2] + " to " + param.split(" ")[1])
+            self.send_message("loaded market liquidity from " + param.split(" ")[1] + " to " + param.split(" ")[2])
 
     def abort(self, bot, update):
         self.par.logger.info("abort command is accepted")

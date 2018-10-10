@@ -40,11 +40,11 @@ class Operator:
         self.orm_init()
 
         # business day check
-        if self.bizday_check():
-            # etl run
-            self.etl_run()
-        else:
-            if len(sys.argv) > 1 and sys.argv[1] == 'server':
+        if len(sys.argv) > 1 and sys.argv[1] == 'server':
+            if self.bizday_check():
+                # etl run
+                self.etl_run()
+            else:
                 self.shut_down()
 
     def chatbot_start(self):

@@ -577,7 +577,7 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate, row_cnt):
         if loop_cur_date == sdate:
             break
 
-    if cts_date > int(sdate):
+    if cts_date > int(sdate) and row_cnt != "1":
         rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, str(cts_date), sdate, row_cnt)
 
     return rslt
