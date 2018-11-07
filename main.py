@@ -43,7 +43,10 @@ class Operator:
         if len(sys.argv) > 1 and sys.argv[1] == 'server':
             if self.bizday_check():
                 # etl run
-                self.etl_run()
+                if len(sys.argv) > 1 and sys.argv[2] is not None:
+                    self.etl_run(sys.argv[2])
+                else:
+                    self.etl_run(self.today)
             else:
                 self.shut_down()
 
@@ -78,11 +81,11 @@ class Operator:
         dbsession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
         self.db_session = dbsession()
 
-    def etl_run(self):
+    def etl_run(self, edate):
         eb.login(self.logger)
         eb.retrieve_item_mst(self.logger, self.bind)
 
-        edate = self.today
+        #edate = self.today
         row_cnt = "1"
 
         d = datetime.today() - timedelta(days=10)
