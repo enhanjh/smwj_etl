@@ -43,7 +43,7 @@ class Operator:
         if len(sys.argv) > 1 and sys.argv[1] == 'server':
             if self.bizday_check():
                 # etl run
-                if len(sys.argv) > 1 and sys.argv[2] is not None:
+                if len(sys.argv) > 2 and sys.argv[2] is not None:
                     self.etl_run(sys.argv[2])
                 else:
                     self.etl_run(self.today)
