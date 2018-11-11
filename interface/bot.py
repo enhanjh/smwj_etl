@@ -43,6 +43,7 @@ class BotSmwj(TelegramBot):
         self.add_handler("shutdown", self.shut_down)
         self.add_handler("investor", self.retrieve_investor_volume)
         self.add_handler("abort", self.abort)
+        self.add_handler("index", self.retrieve_abroad_index)
         self.add_handler("indexamt", self.retrieve_market_index_tr_amt)
         self.add_handler("liquidity", self.retrieve_market_liquidity)
         self.updater.stop()
@@ -70,6 +71,22 @@ class BotSmwj(TelegramBot):
         if " " in param:
             eb.retrieve_investor_volume(self.par.logger, self.par.bind, param.split(" ")[1], param.split(" ")[2])
             self.send_message("loaded investor volume from " + param.split(" ")[2] + " to " + param.split(" ")[1])
+
+    def retrieve_abroad_index(self, bot, update):
+        self.par.logger.info("index command is accepted")
+        self.send_message("index command is accepted")
+        eb.pythoncom.CoInitialize()
+
+        if eb.XASessionEventHandler.login_state == 0:
+            eb.login(self.par.logger)
+
+        if len(eb.XAQueryEventHandlerT8436.item_cd_list) <= 0:
+            eb.retrieve_item_mst(self.par.logger, self.par.bind)
+
+        param = update.message.text
+        if " " in param:
+            eb.retrieve_abroad_index(self.par.logger, self.par.bind, param.split(" ")[1], param.split(" ")[2])
+            self.send_message("loaded market index from " + param.split(" ")[2] + " days before " + param.split(" ")[1])
 
     def retrieve_market_index_tr_amt(self, bot, update):
         self.par.logger.info("indexamt command is accepted")

@@ -466,7 +466,7 @@ def retrieve_abroad_index_api_callback(instXAQueryT3518, temp, row_cnt):
 
         rslt.append(row)
 
-    if not row_cnt == "1":
+    if len(rslt) < int(row_cnt):
         rslt = rslt + retrieve_abroad_index_api_call(instXAQueryT3518, 1, temp, cts_date, cts_time, row_cnt)
 
     return rslt
