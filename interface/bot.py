@@ -46,6 +46,7 @@ class BotSmwj(TelegramBot):
         self.add_handler("index", self.retrieve_abroad_index)
         self.add_handler("indexamt", self.retrieve_market_index_tr_amt)
         self.add_handler("liquidity", self.retrieve_market_liquidity)
+        self.add_handler("shortselling", self.retrieve_short_selling)
         self.updater.stop()
 
     def add_handler(self, cmd, func):
@@ -123,6 +124,24 @@ class BotSmwj(TelegramBot):
                                          , param.split(" ")[1]
                                          , param.split(" ")[3])
             self.send_message("loaded market liquidity from " + param.split(" ")[1] + " to " + param.split(" ")[2])
+
+
+    def retrieve_short_selling(self, bot, update):
+        self.par.logger.info("short selling info command is accepted")
+        self.send_message("short selling info command is accepted")
+        eb.pythoncom.CoInitialize()
+
+        if eb.XASessionEventHandler.login_state == 0:
+            eb.login(self.par.logger)
+
+        if len(eb.XAQueryEventHandlerT8436.item_cd_list) <= 0:
+            eb.retrieve_item_mst(self.par.logger, self.par.bind)
+
+        param = update.message.text
+        if " " in param:
+            eb.retrieve_short_selling(self.par.logger, self.par.bind, param.split(" ")[1], param.split(" ")[2])
+            self.send_message("loaded short selling info from " + param.split(" ")[2] + " to " + param.split(" ")[1])
+
 
     def abort(self, bot, update):
         self.par.logger.info("abort command is accepted")

@@ -79,6 +79,14 @@ class XAQueryEventHandlerT8428:
         XAQueryEventHandlerT8428.query_state = 1
 
 
+# 7. short selling info
+class XAQueryEventHandlerT1927:
+    query_state = 0
+
+    def OnReceiveData(self, code):
+        XAQueryEventHandlerT1927.query_state = 1
+
+
 # function definition
 # 1. login
 def login(obj):
@@ -581,3 +589,73 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate, row_cnt):
         rslt = rslt + retrieve_market_liquidity_api_call(instXAQueryT8428, 1, str(cts_date), sdate, row_cnt)
 
     return rslt
+
+
+# 7. short selling info
+def retrieve_short_selling(logger, bind, edate, sdate):
+    logger.info("retrieve short selling from " + sdate + " to " + edate)
+
+    metadata = sa.MetaData(bind=bind)
+    tbl = sa.Table('short_selling'
+                   , metadata
+                   , sa.Column('item', sa.String, primary_key=True)
+                   , sa.Column('tran_day', sa.String, primary_key=True)
+                   , sa.Column('volume', sa.Integer)
+                   , sa.Column('amount', sa.Integer)
+                   , sa.Column('portion', sa.Float)
+                   , sa.Column('avg_price', sa.Float)
+                   , sa.Column('cum_volume', sa.Integer)
+                   )
+
+    instXAQueryT1927 = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandlerT1927)
+    instXAQueryT1927.ResFileName = "C:\\eBEST\\xingAPI\\Res\\T1927.res"
+
+    items = list()
+
+    for idx, val in enumerate(XAQueryEventHandlerT8436.item_cd_list):
+        logger.info(str(idx) + " : " + str(val))
+        instXAQueryT1927.SetFieldData("t1927InBlock", "shcode", 0, val)
+        instXAQueryT1927.SetFieldData("t1927InBlock", "sdate", 0, sdate)
+        instXAQueryT1927.SetFieldData("t1927InBlock", "edate", 0, edate)
+
+        time.sleep(3)
+
+        XAQueryEventHandlerT1927.query_state = 0
+        instXAQueryT1927.Request(0)
+
+        while XAQueryEventHandlerT1927.query_state == 0:
+            pythoncom.PumpWaitingMessages()
+
+        if sdate == edate:  # today's info only
+            row = list()
+            row.append(val)
+            row.append(edate)
+            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo", i)))  # 공매도 수량
+            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_va", i)))  # 공매도 대금
+            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_per", i)))  # 공매도 거래 비중
+            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_avg", i)))  # 평균 공매도 단가
+            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo_sum", i)))  # 누적 공매도 수량
+
+            items.append(row)
+
+        else:  # periodic info
+            count = instXAQueryT1927.GetBlockCount("t1927OutBlock1")
+
+            items.clear()
+
+            for i in range(count):
+                row = list()
+                row.append(val)
+                row.append(instXAQueryT1927.GetFieldData("t1927OutBlock1", "date", i))
+                row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo", i)))  # 공매도 수량
+                row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_va", i)))  # 공매도 대금
+                row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_per", i)))  # 공매도 거래 비중
+                row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_avg", i)))  # 평균 공매도 단가
+                row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo_sum", i)))  # 누적 공매도 수량
+
+                items.append(row)
+
+            odo.odo(items, tbl)
+
+    if sdate == edate:
+        odo.odo(items, tbl)
