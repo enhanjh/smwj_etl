@@ -95,8 +95,8 @@ class Operator:
         eb.retrieve_investor_volume(self.logger, self.bind, edate, edate)
         eb.retrieve_market_index_tr_amt(self.logger, self.bind, edate, edate)
         eb.retrieve_abroad_index(self.logger, self.bind, edate, row_cnt)
-        eb.retrieve_market_liquidity(self.logger, self.bind, edate, sdate, row_cnt)
         eb.retrieve_short_selling(self.logger, self.bind, edate, edate)
+        eb.retrieve_market_liquidity(self.logger, self.bind, edate, sdate, row_cnt)        
 
         self.shut_down()
 
