@@ -630,11 +630,11 @@ def retrieve_short_selling(logger, bind, edate, sdate):
             row = list()
             row.append(val)
             row.append(edate)
-            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo", i)))  # 공매도 수량
-            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_va", i)))  # 공매도 대금
-            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_per", i)))  # 공매도 거래 비중
-            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_avg", i)))  # 평균 공매도 단가
-            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo_sum", i)))  # 누적 공매도 수량
+            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo", 0)))  # 공매도 수량
+            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_va", 0)))  # 공매도 대금
+            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_per", 0)))  # 공매도 거래 비중
+            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_avg", 0)))  # 평균 공매도 단가
+            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo_sum", 0)))  # 누적 공매도 수량
 
             items.append(row)
 
