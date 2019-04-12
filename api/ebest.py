@@ -592,7 +592,7 @@ def retrieve_market_liquidity_api_callback(instXAQueryT8428, sdate, row_cnt):
 
 
 # 7. short selling info
-def retrieve_short_selling(logger, bind, edate, sdate):
+def retrieve_short_selling(logger, bind, engine, edate, sdate):
     logger.info("retrieve short selling from " + sdate + " to " + edate)
 
     metadata = sa.MetaData(bind=bind)
@@ -627,16 +627,44 @@ def retrieve_short_selling(logger, bind, edate, sdate):
             pythoncom.PumpWaitingMessages()
 
         if sdate == edate:  # today's info only
-            row = list()
-            row.append(val)
-            row.append(edate)
-            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo", 0)))  # 공매도 수량
-            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_va", 0)))  # 공매도 대금
-            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_per", 0)))  # 공매도 거래 비중
-            row.append(float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_avg", 0)))  # 평균 공매도 단가
-            row.append(int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo_sum", 0)))  # 누적 공매도 수량
+            try:
+                gm_vo = int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo", 0))  # 공매도 수량
+            except ValueError:
+                gm_vo = 0
 
-            items.append(row)
+            try:
+                gm_va = int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_va", 0))  # 공매도 대금
+            except ValueError:
+                gm_va = 0
+            
+            try:
+                gm_per = float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_per", 0))  # 공매도 거래 비중
+            except ValueError:
+                gm_per = 0
+
+            try:
+                gm_avg = float(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_avg", 0))  # 평균 공매도 단가
+            except ValueError:
+                gm_avg = 0
+
+            try:
+                gm_vo_sum = int(instXAQueryT1927.GetFieldData("t1927OutBlock1", "gm_vo_sum", 0))  # 누적 공매도 수량
+            except ValueError:
+                gm_vo_sum = 0
+
+            dict_rslt = {
+                "item": [val],
+                "tran_day": [edate],
+                "volume": [gm_vo],
+                "amount": [gm_va],
+                "portion": [gm_per],
+                "avg_price": [gm_avg],
+                "cum_volume": [gm_vo_sum]
+            }
+            columns = ["item", "tran_day", "volume", "amount", "portion", "avg_price", "cum_volume"]
+            df_rslt = pd.DataFrame(dict_rslt, columns=columns)
+
+            df_rslt.to_sql('short_selling', con=engine, if_exists='append', index=False)
 
         else:  # periodic info
             count = instXAQueryT1927.GetBlockCount("t1927OutBlock1")
@@ -656,6 +684,7 @@ def retrieve_short_selling(logger, bind, edate, sdate):
                 items.append(row)
 
             odo.odo(items, tbl)
-
+    '''
     if sdate == edate:
         odo.odo(items, tbl)
+    '''

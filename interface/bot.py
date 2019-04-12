@@ -139,7 +139,7 @@ class BotSmwj(TelegramBot):
 
         param = update.message.text
         if " " in param:
-            eb.retrieve_short_selling(self.par.logger, self.par.bind, param.split(" ")[1], param.split(" ")[2])
+            eb.retrieve_short_selling(self.par.logger, self.par.bind, self.par.engine, param.split(" ")[1], param.split(" ")[2])
             self.send_message("loaded short selling info from " + param.split(" ")[2] + " to " + param.split(" ")[1])
 
 

@@ -31,6 +31,7 @@ class Operator:
         self.logger = object()
         self.db_session = object()
         self.logger = object()
+        self.engine = object()
         self.bind = str()
         self.today = time.strftime("%Y%m%d")
 
@@ -77,8 +78,8 @@ class Operator:
         host  = ic.dbconfig["host"]
         self.bind = 'mysql+mysqlconnector://' + scott + ':' + tiger + '@' + host + ':3306/smwj'
 
-        engine = create_engine(self.bind)
-        dbsession = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        self.engine = create_engine(self.bind)
+        dbsession = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
         self.db_session = dbsession()
 
     def etl_run(self, edate):
@@ -96,7 +97,7 @@ class Operator:
         eb.retrieve_market_index_tr_amt(self.logger, self.bind, edate, edate)
         eb.retrieve_abroad_index(self.logger, self.bind, edate, row_cnt)
         eb.retrieve_short_selling(self.logger, self.bind, edate, edate)
-        eb.retrieve_market_liquidity(self.logger, self.bind, edate, sdate, row_cnt)        
+        eb.retrieve_market_liquidity(self.logger, self.bind, self.engine, edate, sdate, row_cnt)        
 
         self.shut_down()
 
