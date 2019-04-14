@@ -74,7 +74,7 @@ class BotSmwj(TelegramBot):
 
         param = update.message.text
         if " " in param:
-            eb.retrieve_daily_chart(self.par.logger, self.par.bind, param.split(" ")[2], param.split(" ")[1])
+            eb.retrieve_daily_chart(self.par.logger, self.par.bind, self.par.db_session, param.split(" ")[2], param.split(" ")[1])
             self.send_message("loaded price from " + param.split(" ")[1] + " to " + param.split(" ")[2])
 
 
